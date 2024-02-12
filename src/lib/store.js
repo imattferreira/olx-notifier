@@ -2,11 +2,23 @@ import fs from "node:fs";
 
 const databasePathname = new URL("../database.json", import.meta.url).pathname;
 
-export async function getAdsByTerm(term) {
+async function getStore() {
   const content = await fs.promises.readFile(databasePathname);
 
-  const stored = JSON.parse(content.toString()).data;
-  const storedTerm = stored.find((t) => t.term === term);
+  return JSON.parse(content.toString()).data;
+}
+
+async function saveStore(data) {
+  await fs.promises.writeFile(databasePathname, data);
+}
+
+function findTerm(term, store) {
+  return store.find((t) => t.term === term);
+}
+
+export async function getAdsByTerm(term) {
+  const store = await getStore();
+  const storedTerm = findTerm(term, store);
 
   if (!storedTerm) {
     return null;
@@ -16,17 +28,17 @@ export async function getAdsByTerm(term) {
 }
 
 export async function saveAdsByTerm(term, ads) {
-  const content = await fs.promises.readFile(databasePathname);
-
-  const stored = JSON.parse(content.toString()).data;
-  const storedTerm = stored.find((t) => t.term === term);
+  const store = await getStore();
+  const storedTerm = findTerm(term, store);
 
   if (storedTerm) {
     storedTerm.ads = ads;
     storedTerm.modifiedAt = Date.now();
   } else {
-    stored.push({ term, ads, modifiedAt: Date.now() });
+    store.push({ term, ads, modifiedAt: Date.now() });
   }
 
-  await fs.promises.writeFile(databasePathname, JSON.stringify(stored));
+  const updatedStore = JSON.stringify({ data: store });
+
+  await saveStore(updatedStore);
 }
