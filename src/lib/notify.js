@@ -29,13 +29,18 @@ async function prepare() {
   }
 }
 
-async function notify({ title, icon, message, link }) {
+async function notify({ title, icon, message, price, link }) {
   try {
-    const command = `terminal-notifier -message "${message}" -title "${title}" -open "${link}" -sound default`;
+    const msg = price + " - " + message;
+    const appIcon = new URL("../imgs/olx.png", import.meta.url).pathname;
+    // TODO appIcon not working
+    const command = `terminal-notifier -appIcon "${appIcon}" -message "${msg}" -title "${title}" -open "${link}" -contentImage "${icon}" -sound default`;
 
     await prepare();
     await exec(command);
-  } catch {}
+  } catch {
+    // do nothing
+  }
 }
 
 export default notify;
