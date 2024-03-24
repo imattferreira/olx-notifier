@@ -2,6 +2,7 @@ from typing import Union
 import requests
 import json
 
+# OLX hasn't migrated to Next.JS AppRouter yet, so we can use it in our favor
 START_SCRIPT_TAG = '<script id="__NEXT_DATA__" type="application/json">'
 END_SCRIPT_TAG = "</script>"
 

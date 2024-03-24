@@ -1,3 +1,8 @@
+# TODO: parse ads when get from database store
+# TODO: stringify ads before store in database
+# TODO: validate all code
+# TODO: apply filters in scraped ads
+
 import math
 from lib.notify import notify
 from lib.prettify import prettify
