@@ -23,7 +23,7 @@ def main():
                 d = scrape(term=term, page=p)
                 ads.append(d["props"]["pageProps"]["ads"])
 
-        prettified = prettify(ads=ads, term=term.term)
+        prettified = prettify(ads=ads, term=term)
 
         save_ads_by_term(ads=prettified, term=term.term)
         notify(term=term.term, ads=prettified)
