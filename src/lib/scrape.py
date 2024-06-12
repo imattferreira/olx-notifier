@@ -1,36 +1,54 @@
-from typing import Union
+from typing import Literal, Any
+from entities.term import Term
+import urllib.parse
 import requests
 import json
 
-# OLX hasn't migrated to Next.JS AppRouter yet, so we can use it in our favor
-START_SCRIPT_TAG = '<script id="__NEXT_DATA__" type="application/json">'
+START_SCRIPT_TAG = "<script id=\"__NEXT_DATA__\" type=\"application/json\">"
 END_SCRIPT_TAG = "</script>"
 
-def _mount_url(term: str, localization: str, page: int) -> str:
-  base_url = "https://olx.com.br"
+LOCALIZATIONS = {
+    "municipal": "/estado-sp/regiao-de-bauru-e-marilia/bauru",
+    "region": "/estado-sp/regiao-de-bauru-e-marilia",
+    "state": "/estado-sp"
+}
 
-  base_url += LOCALIZATIONS.get(localization)
-  base_url += f"?q={term}"
 
-  if page and page > 1:
-    base_url += f"&o={page}"
+def mount_url(
+    term: str,
+    localization: Literal["municipal", "region", "state"],
+    page: int
+) -> str:
+    url = "https://www.olx.com.br"
+    encoded_term = urllib.parse.quote(term)
 
-  return base_url
+    url += LOCALIZATIONS[localization]
+    url += f"?q={encoded_term}"
 
-def _extract_server_data(html: str) -> dict:
-  start_index = html.index(START_SCRIPT_TAG)
-  end_index = html.index(END_SCRIPT_TAG)
+    if page > 1:
+        url += f"&o={page}"
 
-  data = html[start_index:end_index].replace(START_SCRIPT_TAG, "").replace(END_SCRIPT_TAG, "")
+    return url
 
-  return json.loads(data)["props"]["pageProps"]
 
-def scrape(term: str, localization: str, page: int) -> Union[dict, Exception]:
-  url = _mount_url(term, localization, page)
+def scrape(term: Term, page: int) -> dict[str, Any]:
+    url = mount_url(term=term.term, localization=term.localization, page=page)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+    }
 
-  response = requests.get(url)
+    res = requests.get(url=url, headers=headers)
 
-  if response.status_code != 200:
-    raise Exception("scraping failed!")
-  
-  return _extract_server_data(response.text)
+    if not res.ok:
+        raise Exception("scraping failed!")
+
+    html = res.text
+
+    start_index = html.index(START_SCRIPT_TAG)
+    end_index = html.index(END_SCRIPT_TAG, start_index)
+    slicer = slice(start_index, end_index)
+
+    jj = html[slicer].replace(
+        START_SCRIPT_TAG, "").replace(END_SCRIPT_TAG, "")
+
+    return json.loads(jj)

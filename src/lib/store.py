@@ -1,52 +1,31 @@
-import json
-from typing import Union
-from datetime import datetime
+from typing import Any
 from entities.ad import Ad
+import json
 
-def _get_store() -> list[dict]:
-  database = open("src/database.json", "r")
-  data = database.read()
 
-  database.close()
+def get_ads_by_term(term: str):
+    with open("./src/database.json", "r") as file:
+        result: list[Ad] = []
+        data = json.loads(file.read())["data"]
 
-  return json.loads(data)
+        for i in data:
+            if i["term"] == term:
+                for j in i["ads"]:
+                    result.append(Ad.parse(j))
 
-def _save_store(store: list[dict]) -> None:
-  database = open("src/database.json", "w")
-  data = json.dumps(store)
+        file.close()
+        return result
 
-  database.write(data)
-  database.close()
 
-def _find_term(term: str, stored: list[dict]) -> Union[list[dict], None]:
-  return next((i for i in stored if i["term"] == term), False)
+def save_ads_by_term(term: str, ads: list[Ad]):
+    with open("./src/database.json", "wr") as file:
+        data = json.loads(file.read())["data"]
+        updated: list[dict[str, Any]] = []
 
-def get_ads_by_term(term: str) -> Union[list[dict], None]:
-  stored = _get_store()
+        for i in data:
+            if i["term"] != term:
+                updated.append(i)
 
-  stored_ads_by_term = _find_term(term, stored)
-
-  if not stored_ads_by_term:
-    return None
-  
-  return stored_ads_by_term["ads"]
-
-def save_ads_by_term(term: str, ads: list[Ad]) -> None:
-  stored = _get_store()
-  stored_ads_by_term = _find_term(term, stored)
-  modified_at = datetime.now()
-
-  if not isinstance(stored_ads_by_term, list):
-    data = {
-      term,
-      ads,
-      modified_at
-    }
-
-    stored.append(data)
-  else:
-    stored_ads_by_term["ads"] = ads
-    stored_ads_by_term["modified_at"] = modified_at
-
-  _save_store(stored)
-  
+        updated.append({"term": term, "ads": ads})
+        file.write(json.dumps({"data": updated}))
+        file.close()

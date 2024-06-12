@@ -1,53 +1,54 @@
+from typing import Any
 from entities.ad import Ad
-from entities.term import Term
 from store import get_ads_by_term
 
-def _is_new_ad(stored: list[dict]):
-  def find_ad(ad: Ad) -> bool:
-    if len(stored) == 0:
-      return True
 
-    matched = next((a for a in stored if a["url"] == ad.get_url()), None)
+def __flat(l: list[list[Any]]) -> list[Any]:
+    return [x for xs in l for x in xs]
 
-    return bool(matched)
 
-    return find_ad;
+def __is_advertising(ad: dict[str, Any]) -> bool:
+    return not "subject" in ad
 
-def _is_not_advertising(ad: dict) -> bool:
-  return ad["title"] != None
 
-def _only_ads(data: list[dict]) -> list[dict]:
-  flatted = list()
+def __is_preferable(ad: Ad) -> bool:
+    # TODO: finish implementation
+    return True
 
-  for d in data:
-    flatted.append(d["props"]["pageProps"]["ads"])
 
-  return flatted
+def __format(ads: list[dict[str, Any]]) -> list[Ad]:
+    result: list[Ad] = []
 
-def fn_reduce(initial_data: any, fns: list) -> any:
-  tmp = initial_data
+    for ad in ads:
+        if not __is_advertising(ad):
+            result.append(Ad.parse(ad))
 
-  for fn in fns:
-    tmp = fn(tmp)
+    return result
 
-  return tmp
 
-# TODO:
-def _only_preferences(filters: list[dict]):
-  def is_according_with_prefs(ad) -> bool:
-    return bool(ad)
+def __is_inside(ad: Ad, last_notified_ads: list[Ad]) -> bool:
+    for notified_ad in last_notified_ads:
+        if ad.url == notified_ad.url:
+            return True
 
-# TODO: change way to filter ads
-def prettify(ads: list[dict], term: Term) -> list[Ad]:
-  last_notified_ads = get_ads_by_term(term.term)
+    return False
 
-  return fn_reduce(
-    ads,
-    (
-      Ad.parse,
-      _only_ads, 
-      _is_not_advertising,
-      _only_preferences(filters),
-      _is_new_ad(last_notified_ads)
-    )
-  )
+
+def __get_newest_ads(ads: list[Ad], term: str) -> list[Ad]:
+    result: list[Ad] = []
+    last_notified_ads = get_ads_by_term(term)
+
+    for ad in ads:
+        if __is_preferable(ad) and not __is_inside(ad, last_notified_ads):
+            result.append(ad)
+
+    return result
+
+
+def prettify(ads: list[list[dict[str, Any]]], term: str):
+
+    flatted = __flat(ads)
+    formatted = __format(flatted)
+    newest_ads = __get_newest_ads(formatted, term)
+
+    return newest_ads

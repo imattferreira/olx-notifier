@@ -1,31 +1,32 @@
+from typing import Union, Literal
+
+
 class Term:
-  term: str
-  localization: str
-  nosy_terms = []
-  price_range = {
-    min: int,
-    max: int
-  }
-  price_range_by_term = []
+    term: str
+    localization: Literal["municipal", "region", "state"]
+    nosy_terms: list[str] = []
+    price_range: dict[str, int] = {"min": 0, "max": 0}
+    price_range_by_term: list[dict[str, Union[str, int]]] = []
 
-  def __init__(self, term: str):
-    self.term = term
+    def __init__(
+        self,
+        term: str,
+        localization: Literal["municipal", "region", "state"],
+        min: int,
+        max: int,
+        nosy_terms: list[str]
+    ):
+        self.term = term
+        self.localization = localization
+        self.price_range["min"] = min
+        self.price_range["max"] = max
+        self.nosy_terms = nosy_terms
 
-  def set_localization(self, localization: str) -> None:
-    self.localization = localization
+    def set_price_range_by_term(self, term: str, min: int, max: int) -> None:
+        filter: dict[str, Union[str, int]] = {
+            "term": term,
+            "min": min,
+            "max": max
+        }
 
-  def set_nosy_term(self, term: str) -> None:
-    self.nosy_terms.append(term)
-
-  def set_price_range(self, min: int, max: int) -> None:
-    self.price_range["min"] = min
-    self.price_range["max"] = max
-
-  def set_price_range_by_term(self, term: str, min: int, max: int) -> None:
-    filter = {
-      term,
-      min,
-      max
-    }
-
-    self.price_range_by_term.append(filter)
+        self.price_range_by_term.append(filter)
